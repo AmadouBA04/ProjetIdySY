@@ -1,0 +1,29 @@
+# Dossiers Python inutiles
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Dossiers temporaires
+.DS_Store
+Thumbs.db
+
+# Fichiers système
+.vscode/
+.idea/
+*.log
+
+# Fichiers d’environnement virtuel
+env/
+venv/
+.venv/
+
+# Fichiers de Streamlit
+.streamlit/config.toml
+
+# Données locales
+*.db
+*.sqlite3
+
+# Fichiers secrets
+.env
+*.bak
