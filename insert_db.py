@@ -1,6 +1,8 @@
 from database import connect_db
 
 def insert_patient(values):
+    conn = None
+    cursor = None
     try:
         conn = connect_db()
         cursor = conn.cursor()
@@ -26,8 +28,10 @@ def insert_patient(values):
         conn.commit()
 
     except Exception as e:
-        raise e
+        print(f"❌ Erreur base de données : {e}")
 
     finally:
-        cursor.close()
-        conn.close()
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
