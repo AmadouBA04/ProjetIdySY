@@ -5,3 +5,4 @@ scikit-learn
 shap
 mysql-connector-python
 matplotlib
+openpyxl
