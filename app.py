@@ -6,58 +6,66 @@ from insert_db import insert_patient
 import shap
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Prédiction Décès - SHAP", layout="centered")
-st.title("🧠Prédiction du Décès chez les Patients - Modèle Interprétable🧠")
-st.markdown("""
-Bienvenue sur l'application de prédiction du décès chez les patients à partir de caractéristiques cliniques.  
-Cette application utilise un modèle d'apprentissage automatique interprétable par SHAP pour :
-- Prédire le risque de décès
-- Expliquer les facteurs qui influencent la prédiction
-""")
+# Configuration
+st.set_page_config(page_title="Application Décès - MLP + SHAP", layout="centered")
 
-# Charger le modèle et les données
-model, accuracy, X_train = train_model()
+# Navigation dans la sidebar
+page = st.sidebar.radio("📌 Navigation", ["🏠 Accueil", "📊 Métriques du modèle", "🧾 Prédiction"])
 
-# Afficher l'accuracy globale
-st.markdown(f"### 🎯 Précision actuelle du modèle : **{accuracy:.2%}**")
-st.caption("Ce score indique la proportion de prédictions correctes réalisées par le modèle sur les données d'entraînement.")
-
-# Formulaire Streamlit
-st.header("🧾 Saisie des caractéristiques du patient")
-st.markdown("Veuillez remplir les informations cliniques du patient. Toutes les valeurs sont binaires : **1** pour Oui / Présent, **0** pour Non / Absent.")
-new_patient = formulaire_patient(X_train.columns)
-
-# Si l'utilisateur clique sur le bouton
-if st.button("Prédire et expliquer"):
-    prediction = model.predict(new_patient)[0]
-    st.markdown(f"## ✅ Prédiction : **{'Décès' if prediction == 1 else 'Survie'}**")
-
-    # Enregistrement dans la base de données
-    try:
-        ligne = new_patient.iloc[0].tolist()
-        ligne.append(int(prediction))  # Ajout de la colonne DECES
-        insert_patient(ligne)
-        st.success("📥 Le patient a été enregistré dans la base de données avec succès.")
-    except Exception as e:
-        st.error(f"❌ Erreur base de données : {e}")
-
-    # Valeurs SHAP
-    shap_values, explainer = get_shap_values(model, X_train, new_patient)
-
-    st.subheader("📊 Interprétation des variables (SHAP)")
-
-    # Pour modèle binaire, afficher l’explication de la prédiction classe 1 (Décès)
-    try:
-        shap.plots.waterfall(shap_values[0][:, 1], show=False)
-        fig = plt.gcf()
-        st.pyplot(fig)
-    except Exception as e:
-        st.error(f"Erreur SHAP : {e}")
-        st.subheader("📊 Explication de la prédiction (SHAP)")
+# Accueil
+if page == "🏠 Accueil":
+    st.title("🧠 Prédiction du Décès chez les Patients - Accueil")
     st.markdown("""
-    Le graphique ci-dessus montre l'influence de chaque variable sur la prédiction.  
-    Les barres rouges augmentent le risque de décès, tandis que les barres bleues le réduisent.
+    Bienvenue sur l'application de prédiction du décès chez les patients à partir de caractéristiques cliniques.
+
+    👉 Naviguez via la barre latérale :
+    - **📊 Métriques** : Pour consulter les performances du modèle validé  
+    - **🧾 Prédiction** : Pour faire une prédiction et interpréter les résultats avec SHAP
     """)
 
+# Page Métriques
+elif page == "📊 Métriques du modèle":
+    st.title("📊 Métriques validées du modèle")
 
-    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("🎯 Accuracy", "97.47 %")
+        st.metric("🔍 Précision", "97.78 %")
+    with col2:
+        st.metric("💡 Sensibilité", "97.78 %")
+        st.metric("🛡️ Spécificité", "97.10 %")
+
+    st.caption(" 🎯 Exactitude (Accuracy) - 97.47% L'exactitude mesure la proportion de prédictions correctes. Avec 97.47%, cela signifie que le modèle a correctement prédit si un patient allait décéder ou non dans la majorité des cas. Cela montre une bonne performance générale du modèle.")
+    st.caption(" 🔍 Précision (Precision) - 97.78% La précision indique combien de prédictions positives étaient correctes. Avec 97.78%, le modèle prédit correctement la majorité des décès, minimisant les faux positifs. C'est crucial pour éviter des erreurs de classification des décès.")
+    st.caption(" 💡 Sensibilité (Recall) - 97.78% La sensibilité mesure la capacité du modèle à détecter les vrais positifs. Ici, 97.78% des décès réels ont été correctement identifiés, ce qui montre que le modèle est très bon pour ne pas manquer de décès importants.")
+    st.caption(" 🛡️ Spécificité (Specificity) - 97.10% La spécificité montre la capacité du modèle à identifier les survivants correctement. Avec 97.10%, cela signifie que le modèle a très peu de faux positifs et peut distinguer efficacement les patients survivants des décédés.")
+
+# Page Prédiction + SHAP
+elif page == "🧾 Prédiction":
+    st.title("🧾 Saisie du patient & interprétation SHAP")
+
+    model, _, _, _, _, X_train = train_model()
+
+    st.markdown("Veuillez remplir les informations cliniques du patient. Toutes les valeurs sont binaires : **1** = Oui, **0** = Non.")
+    new_patient = formulaire_patient(X_train.columns)
+
+    if st.button("Prédire et expliquer"):
+        prediction = model.predict(new_patient)[0]
+        st.markdown(f"## ✅ Prédiction : **{'Décès' if prediction == 1 else 'Survie'}**")
+
+        try:
+            ligne = new_patient.iloc[0].tolist()
+            ligne.append(int(prediction))
+            insert_patient(ligne)
+            st.success("📥 Patient enregistré avec succès.")
+        except Exception as e:
+            st.error(f"❌ Erreur base de données : {e}")
+
+        st.subheader("📊 Interprétation SHAP ")
+        try:
+            shap_values, explainer = get_shap_values(model, X_train, new_patient)
+            fig, ax = plt.subplots()
+            shap.plots.waterfall(shap_values, max_display=11, show=False)
+            st.pyplot(fig)
+        except Exception as e:
+            st.error(f"❌ Erreur SHAP : {e}")
